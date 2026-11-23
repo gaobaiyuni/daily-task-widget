@@ -83,7 +83,6 @@ public class DailyTaskWidgetProvider extends AppWidgetProvider {
             Task current = tasks.get(idx);
             views.setTextViewText(R.id.tv_now_label, "现在 · " + current.getStartTimeStr() + " - " + current.getEndTimeStr());
             views.setTextViewText(R.id.tv_task, current.title);
-            views.setInt(R.id.tv_task, "setTextColor", 0xFF1A1C2E);
 
             // 下一个任务（idx+1）
             if (idx + 1 < tasks.size()) {
@@ -101,7 +100,6 @@ public class DailyTaskWidgetProvider extends AppWidgetProvider {
             if (next != null) {
                 views.setTextViewText(R.id.tv_now_label, "现在 · 空闲时间");
                 views.setTextViewText(R.id.tv_task, "休息一下");
-                views.setInt(R.id.tv_task, "setTextColor", 0xFF1A1C2E);
 
                 views.setTextViewText(R.id.tv_next_label, "接下来 · " + next.getStartTimeStr() + " - " + next.getEndTimeStr());
                 views.setTextViewText(R.id.tv_next_task, next.title);
@@ -109,7 +107,6 @@ public class DailyTaskWidgetProvider extends AppWidgetProvider {
                 // 所有任务都结束了
                 views.setTextViewText(R.id.tv_now_label, "现在");
                 views.setTextViewText(R.id.tv_task, "今日任务全部完成");
-                views.setInt(R.id.tv_task, "setTextColor", 0xFF1A1C2E);
 
                 views.setTextViewText(R.id.tv_next_label, "接下来");
                 views.setTextViewText(R.id.tv_next_task, "可以好好休息啦");
@@ -119,7 +116,6 @@ public class DailyTaskWidgetProvider extends AppWidgetProvider {
             // 今天没有任务
             views.setTextViewText(R.id.tv_now_label, "现在");
             views.setTextViewText(R.id.tv_task, "今日暂无安排");
-            views.setInt(R.id.tv_task, "setTextColor", 0xFF1A1C2E);
 
             views.setTextViewText(R.id.tv_next_label, "接下来");
             views.setTextViewText(R.id.tv_next_task, "打开 App 添加任务");
