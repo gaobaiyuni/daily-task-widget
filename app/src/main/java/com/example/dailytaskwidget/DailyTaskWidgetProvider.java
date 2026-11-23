@@ -77,27 +77,52 @@ public class DailyTaskWidgetProvider extends AppWidgetProvider {
         views.setTextViewText(R.id.tv_clock, clockStr);
 
         int idx = TaskStore.findCurrentTaskIndex(tasks);
+
         if (idx >= 0) {
-            Task t = tasks.get(idx);
-            views.setTextViewText(R.id.tv_now_label, "现在 · " + t.getStartTimeStr() + " - " + t.getEndTimeStr());
-            views.setTextViewText(R.id.tv_task, t.title);
+            // 有当前任务：大字显示当前，小字显示下一个
+            Task current = tasks.get(idx);
+            views.setTextViewText(R.id.tv_now_label, "现在 · " + current.getStartTimeStr() + " - " + current.getEndTimeStr());
+            views.setTextViewText(R.id.tv_task, current.title);
             views.setInt(R.id.tv_task, "setTextColor", 0xFF1A1C2E);
+
+            // 下一个任务（idx+1）
+            if (idx + 1 < tasks.size()) {
+                Task next = tasks.get(idx + 1);
+                views.setTextViewText(R.id.tv_next_label, "接下来 · " + next.getStartTimeStr() + " - " + next.getEndTimeStr());
+                views.setTextViewText(R.id.tv_next_task, next.title);
+            } else {
+                views.setTextViewText(R.id.tv_next_label, "接下来");
+                views.setTextViewText(R.id.tv_next_task, "这是今天最后一项啦");
+            }
+
         } else if (!tasks.isEmpty()) {
-            // 没有进行中的任务：显示"空闲"或下一场
+            // 空闲/间隙：当前显示"空闲"，小字显示下一个任务
             Task next = findNextTask(tasks);
             if (next != null) {
-                views.setTextViewText(R.id.tv_now_label, "接下来 · " + next.getStartTimeStr());
-                views.setTextViewText(R.id.tv_task, next.title);
-                views.setInt(R.id.tv_task, "setTextColor", 0xFF8A8DA3);
+                views.setTextViewText(R.id.tv_now_label, "现在 · 空闲时间");
+                views.setTextViewText(R.id.tv_task, "休息一下");
+                views.setInt(R.id.tv_task, "setTextColor", 0xFF1A1C2E);
+
+                views.setTextViewText(R.id.tv_next_label, "接下来 · " + next.getStartTimeStr() + " - " + next.getEndTimeStr());
+                views.setTextViewText(R.id.tv_next_task, next.title);
             } else {
-                views.setTextViewText(R.id.tv_now_label, "今日任务已全部完成");
-                views.setTextViewText(R.id.tv_task, "可以休息啦");
-                views.setInt(R.id.tv_task, "setTextColor", 0xFF8A8DA3);
+                // 所有任务都结束了
+                views.setTextViewText(R.id.tv_now_label, "现在");
+                views.setTextViewText(R.id.tv_task, "今日任务全部完成");
+                views.setInt(R.id.tv_task, "setTextColor", 0xFF1A1C2E);
+
+                views.setTextViewText(R.id.tv_next_label, "接下来");
+                views.setTextViewText(R.id.tv_next_task, "可以好好休息啦");
             }
+
         } else {
-            views.setTextViewText(R.id.tv_now_label, "今日暂无安排");
-            views.setTextViewText(R.id.tv_task, "打开 App 添加任务");
-            views.setInt(R.id.tv_task, "setTextColor", 0xFF8A8DA3);
+            // 今天没有任务
+            views.setTextViewText(R.id.tv_now_label, "现在");
+            views.setTextViewText(R.id.tv_task, "今日暂无安排");
+            views.setInt(R.id.tv_task, "setTextColor", 0xFF1A1C2E);
+
+            views.setTextViewText(R.id.tv_next_label, "接下来");
+            views.setTextViewText(R.id.tv_next_task, "打开 App 添加任务");
         }
 
         // 点击小组件打开主界面

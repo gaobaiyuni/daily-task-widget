@@ -33,18 +33,17 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- 当前时段标签 -->
+    <!-- 当前任务区域 -->
     <TextView
         android:id="@+id/tv_now_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="8dp"
         android:text="现在 · 09:00 - 10:00"
         android:textColor="#5B6BF5"
-        android:textSize="12sp"
+        android:textSize="13sp"
         android:textStyle="bold" />
 
-    <!-- 当前任务内容 -->
     <TextView
         android:id="@+id/tv_task"
         android:layout_width="match_parent"
@@ -52,8 +51,36 @@
         android:layout_marginTop="2dp"
         android:text="准备周会材料"
         android:textColor="#1A1C2E"
-        android:textSize="20sp"
+        android:textSize="24sp"
         android:textStyle="bold"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <!-- 分隔线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="10dp"
+        android:background="#EEEEF2" />
+
+    <!-- 下一个任务区域 -->
+    <TextView
+        android:id="@+id/tv_next_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="接下来 · 10:00 - 11:00"
+        android:textColor="#8A8DA3"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/tv_next_task"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:text="参加项目评审会"
+        android:textColor="#8A8DA3"
+        android:textSize="14sp"
         android:maxLines="2"
         android:ellipsize="end" />
 

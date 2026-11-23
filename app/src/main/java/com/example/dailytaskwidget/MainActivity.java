@@ -115,13 +115,21 @@ public class MainActivity extends AppCompatActivity {
         tpStart.setIs24HourView(true);
         tpEnd.setIs24HourView(true);
 
-        // 默认开始时间 = 下一个整点，结束 = 开始后 1 小时
-        Calendar c = Calendar.getInstance();
-        int defaultStartHour = (c.get(Calendar.HOUR_OF_DAY) + 1) % 24;
-        tpStart.setHour(defaultStartHour);
-        tpStart.setMinute(0);
-        tpEnd.setHour((defaultStartHour + 1) % 24);
-        tpEnd.setMinute(0);
+        // 默认时间：如果已有任务，衔接最后一个任务的结束时间；否则默认下一个整点
+        int defaultStart, defaultEnd;
+        if (!taskList.isEmpty()) {
+            Task last = taskList.get(taskList.size() - 1);
+            defaultStart = last.endMinute;
+            defaultEnd = Math.min(defaultStart + 60, 24 * 60 - 1);
+        } else {
+            Calendar c = Calendar.getInstance();
+            defaultStart = ((c.get(Calendar.HOUR_OF_DAY) + 1) % 24) * 60;
+            defaultEnd = defaultStart + 60;
+        }
+        tpStart.setHour(defaultStart / 60);
+        tpStart.setMinute(defaultStart % 60);
+        tpEnd.setHour(defaultEnd / 60);
+        tpEnd.setMinute(defaultEnd % 60);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
