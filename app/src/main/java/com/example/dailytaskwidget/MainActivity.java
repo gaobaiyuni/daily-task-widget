@@ -161,7 +161,17 @@ public class MainActivity extends AppCompatActivity {
 
                 taskList.add(new Task(startMinute, endMinute, title));
                 saveAndRefresh();
-                dialog.dismiss();
+
+                // 连续添加：不关闭弹窗，清空输入，时间自动衔接上一个任务的结束时间
+                etTitle.setText("");
+                int nextStart = endMinute;
+                int nextEnd = Math.min(nextStart + 60, 24 * 60 - 1);
+                tpStart.setHour(nextStart / 60);
+                tpStart.setMinute(nextStart % 60);
+                tpEnd.setHour(nextEnd / 60);
+                tpEnd.setMinute(nextEnd % 60);
+
+                Toast.makeText(MainActivity.this, "已保存，可继续添加下一个（点取消退出）", Toast.LENGTH_SHORT).show();
             }
         });
 
