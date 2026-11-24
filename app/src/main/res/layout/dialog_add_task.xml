@@ -13,41 +13,27 @@
         android:textSize="18sp"
         android:textStyle="bold" />
 
-    <!-- 开始时间 -->
+    <!-- 时间段选择 -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="开始时间"
+        android:text="时间段（每小时一段）"
         android:textColor="@color/text_secondary"
         android:textSize="13sp" />
 
-    <TimePicker
-        android:id="@+id/tp_start"
+    <Spinner
+        android:id="@+id/sp_time"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:timePickerMode="spinner" />
-
-    <!-- 结束时间 -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="结束时间"
-        android:textColor="@color/text_secondary"
-        android:textSize="13sp" />
-
-    <TimePicker
-        android:id="@+id/tp_end"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:timePickerMode="spinner" />
+        android:layout_marginTop="4dp"
+        android:backgroundTint="@color/primary" />
 
     <!-- 任务内容 -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:text="要做什么"
         android:textColor="@color/text_secondary"
         android:textSize="13sp" />
@@ -56,6 +42,7 @@
         android:id="@+id/et_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
         android:hint="例如：开会、写报告、健身…"
         android:inputType="text"
         android:textColor="@color/text_primary"

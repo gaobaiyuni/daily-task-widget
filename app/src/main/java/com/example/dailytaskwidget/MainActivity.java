@@ -5,10 +5,11 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.TimePicker;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,17 +21,25 @@ import java.util.Calendar;
 import java.util.List;
 
 /**
- * 主界面：配置今日（也可切换查看其他日期）的时间段任务
+ * 主界面：配置今天/明天的任务。
+ * 时间用下拉选项选择（8:00-23:00，每小时一段）。
  */
 public class MainActivity extends AppCompatActivity {
+
+    // 时间段选项：8点到23点，每小时一段（共15段）
+    private static final int START_HOUR = 8;   // 最早 8 点
+    private static final int END_HOUR = 23;    // 最晚 23 点（即 22:00-23:00 是最后一段）
 
     private RecyclerView rvTasks;
     private TextView tvEmpty;
     private TextView tvTitleDate;
+    private TextView tabToday;
+    private TextView tabTomorrow;
     private TaskAdapter adapter;
     private final List<Task> taskList = new ArrayList<>();
 
-    private String currentDateKey; // 当前查看的日期
+    private String currentDateKey;   // 当前查看的日期
+    private boolean showingTomorrow = false; // 是否正在查看明天
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
         rvTasks = findViewById(R.id.rv_tasks);
         tvEmpty = findViewById(R.id.tv_empty);
         tvTitleDate = findViewById(R.id.tv_title_date);
+        tabToday = findViewById(R.id.tab_today);
+        tabTomorrow = findViewById(R.id.tab_tomorrow);
         Button btnAdd = findViewById(R.id.btn_add);
 
         // 默认显示今天
@@ -55,6 +66,20 @@ public class MainActivity extends AppCompatActivity {
         });
         rvTasks.setAdapter(adapter);
 
+        // 今天/明天切换
+        tabToday.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switchToToday();
+            }
+        });
+        tabTomorrow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switchToTomorrow();
+            }
+        });
+
         btnAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -62,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        updateTabUI();
         loadTasks();
     }
 
@@ -69,6 +95,40 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadTasks();
+    }
+
+    private void switchToToday() {
+        showingTomorrow = false;
+        currentDateKey = TaskStore.todayKey();
+        updateTabUI();
+        loadTasks();
+    }
+
+    private void switchToTomorrow() {
+        showingTomorrow = true;
+        currentDateKey = TaskStore.dateKey(1); // 明天
+        updateTabUI();
+        loadTasks();
+    }
+
+    /** 更新今天/明天标签的高亮样式 */
+    private void updateTabUI() {
+        // 今天标签
+        if (showingTomorrow) {
+            tabToday.setBackgroundResource(android.R.color.transparent);
+            tabToday.setTextColor(0xFF8A8DA3);
+        } else {
+            tabToday.setBackgroundResource(R.color.primary);
+            tabToday.setTextColor(0xFFFFFFFF);
+        }
+        // 明天标签
+        if (showingTomorrow) {
+            tabTomorrow.setBackgroundResource(R.color.primary);
+            tabTomorrow.setTextColor(0xFFFFFFFF);
+        } else {
+            tabTomorrow.setBackgroundResource(android.R.color.transparent);
+            tabTomorrow.setTextColor(0xFF8A8DA3);
+        }
     }
 
     /** 加载当前日期的任务 */
@@ -81,7 +141,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateTitleDate() {
-        tvTitleDate.setText(formatDateTitle(currentDateKey));
+        String prefix = showingTomorrow ? "明天 · " : "今天 · ";
+        tvTitleDate.setText(prefix + formatDateTitle(currentDateKey));
     }
 
     private void updateEmptyState() {
@@ -106,30 +167,37 @@ public class MainActivity extends AppCompatActivity {
     /** 弹出添加任务对话框 */
     private void showAddDialog() {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_task, null);
-        TimePicker tpStart = dialogView.findViewById(R.id.tp_start);
-        TimePicker tpEnd = dialogView.findViewById(R.id.tp_end);
+        Spinner spTime = dialogView.findViewById(R.id.sp_time);
         EditText etTitle = dialogView.findViewById(R.id.et_title);
         Button btnCancel = dialogView.findViewById(R.id.btn_cancel);
         Button btnOk = dialogView.findViewById(R.id.btn_ok);
 
-        tpStart.setIs24HourView(true);
-        tpEnd.setIs24HourView(true);
+        // 时间段选项：8:00-9:00, 9:00-10:00 ... 22:00-23:00
+        List<String> timeOptions = new ArrayList<>();
+        List<Integer> startMinutes = new ArrayList<>();
+        for (int h = START_HOUR; h < END_HOUR; h++) {
+            String label = String.format("%02d:00 - %02d:00", h, h + 1);
+            timeOptions.add(label);
+            startMinutes.add(h * 60);
+        }
+        ArrayAdapter<String> adapterSpinner = new ArrayAdapter<>(
+                this, android.R.layout.simple_spinner_item, timeOptions);
+        adapterSpinner.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spTime.setAdapter(adapterSpinner);
 
-        // 默认时间：如果已有任务，衔接最后一个任务的结束时间；否则默认下一个整点
-        int defaultStart, defaultEnd;
+        // 默认选中第一个（8:00-9:00），如果已有任务则选中最后一个的下一个时段
         if (!taskList.isEmpty()) {
             Task last = taskList.get(taskList.size() - 1);
-            defaultStart = last.endMinute;
-            defaultEnd = Math.min(defaultStart + 60, 24 * 60 - 1);
-        } else {
-            Calendar c = Calendar.getInstance();
-            defaultStart = ((c.get(Calendar.HOUR_OF_DAY) + 1) % 24) * 60;
-            defaultEnd = defaultStart + 60;
+            int nextStart = last.endMinute;
+            int defaultPos = 0;
+            for (int i = 0; i < startMinutes.size(); i++) {
+                if (startMinutes.get(i) >= nextStart) {
+                    defaultPos = i;
+                    break;
+                }
+            }
+            spTime.setSelection(defaultPos);
         }
-        tpStart.setHour(defaultStart / 60);
-        tpStart.setMinute(defaultStart % 60);
-        tpEnd.setHour(defaultEnd / 60);
-        tpEnd.setMinute(defaultEnd % 60);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
@@ -146,39 +214,36 @@ public class MainActivity extends AppCompatActivity {
         btnOk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int startMinute = tpStart.getHour() * 60 + tpStart.getMinute();
-                int endMinute = tpEnd.getHour() * 60 + tpEnd.getMinute();
+                int pos = spTime.getSelectedItemPosition();
+                if (pos < 0 || pos >= startMinutes.size()) {
+                    Toast.makeText(MainActivity.this, "请选择时间段", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                int startMinute = startMinutes.get(pos);
+                int endMinute = startMinute + 60; // 每小时一段
                 String title = etTitle.getText().toString().trim();
 
                 if (TextUtils.isEmpty(title)) {
                     Toast.makeText(MainActivity.this, "请填写任务内容", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                if (endMinute <= startMinute) {
-                    Toast.makeText(MainActivity.this, "结束时间必须晚于开始时间", Toast.LENGTH_SHORT).show();
-                    return;
-                }
 
                 taskList.add(new Task(startMinute, endMinute, title));
                 saveAndRefresh();
 
-                // 连续添加：不关闭弹窗，清空输入，时间自动衔接上一个任务的结束时间
+                // 连续添加：不关闭弹窗，清空输入，自动选中下一个时段
                 etTitle.setText("");
-                int nextStart = endMinute;
-                int nextEnd = Math.min(nextStart + 60, 24 * 60 - 1);
-                tpStart.setHour(nextStart / 60);
-                tpStart.setMinute(nextStart % 60);
-                tpEnd.setHour(nextEnd / 60);
-                tpEnd.setMinute(nextEnd % 60);
-
-                Toast.makeText(MainActivity.this, "已保存，可继续添加下一个（点取消退出）", Toast.LENGTH_SHORT).show();
+                if (pos + 1 < startMinutes.size()) {
+                    spTime.setSelection(pos + 1);
+                }
+                Toast.makeText(MainActivity.this, "已保存，可继续添加（点完成退出）", Toast.LENGTH_SHORT).show();
             }
         });
 
         dialog.show();
     }
 
-    /** 把 "yyyy-MM-dd" 转成 "11月23日 周一" */
+    /** 把 "yyyy-MM-dd" 转成 "11月24日 周二" */
     private String formatDateTitle(String dateKey) {
         try {
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US);
