@@ -228,15 +228,23 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
+                // 添加任务并保存
                 taskList.add(new Task(startMinute, endMinute, title));
                 saveAndRefresh();
 
-                // 连续添加：不关闭弹窗，清空输入，自动选中下一个时段
-                etTitle.setText("");
-                if (pos + 1 < startMinutes.size()) {
-                    spTime.setSelection(pos + 1);
-                }
-                Toast.makeText(MainActivity.this, "已保存，可继续添加（点完成退出）", Toast.LENGTH_SHORT).show();
+                // 关闭当前弹窗
+                dialog.dismiss();
+
+                // 提示成功
+                Toast.makeText(MainActivity.this, "已保存：" + title, Toast.LENGTH_SHORT).show();
+
+                // 自动重新弹窗，继续添加下一个（时间自动顺延）
+                spTime.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        showAddDialog();
+                    }
+                }, 300);
             }
         });
 

@@ -78,7 +78,7 @@ public class TaskStore {
                 e.printStackTrace();
             }
         }
-        sp.edit().putString(dateKey, arr.toString()).apply();
+        sp.edit().putString(dateKey, arr.toString()).commit();
     }
 
     /**
