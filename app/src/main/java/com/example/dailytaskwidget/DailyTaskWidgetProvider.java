@@ -14,14 +14,18 @@ import java.util.Calendar;
 import java.util.List;
 
 /**
- * 桌面小组件：显示当前时段的今日任务（或明天的任务），时间到了自动切换。
+ * 桌面小组件：显示当前时段的今日任务，时间到了自动切换。
  *
- * 显示逻辑：只显示「当前正在进行的任务」一条，大字醒目。
- * 跨天切换：过了今天 23:59 后，自动显示第二天的任务。
+ * 刷新机制（三重保障）：
+ * 1. 每 60 秒定时刷新（到点切换时段）
+ * 2. 午夜零点精确闹钟刷新（跨天自动切到新一天）
+ * 3. 点击小组件时刷新（手动兜底）
  */
 public class DailyTaskWidgetProvider extends AppWidgetProvider {
 
     private static final String ACTION_UPDATE = "com.example.dailytaskwidget.ACTION_UPDATE";
+    private static final String ACTION_CLICK = "com.example.dailytaskwidget.ACTION_CLICK";
+    private static final String ACTION_MIDNIGHT = "com.example.dailytaskwidget.ACTION_MIDNIGHT";
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -29,29 +33,49 @@ public class DailyTaskWidgetProvider extends AppWidgetProvider {
             updateWidget(context, appWidgetManager, id);
         }
         scheduleNextAlarm(context);
+        scheduleMidnightAlarm(context);
     }
 
     @Override
     public void onEnabled(Context context) {
         scheduleNextAlarm(context);
+        scheduleMidnightAlarm(context);
     }
 
     @Override
     public void onDisabled(Context context) {
         cancelAlarm(context);
+        cancelMidnightAlarm(context);
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
-        if (ACTION_UPDATE.equals(intent.getAction())) {
-            AppWidgetManager mgr = AppWidgetManager.getInstance(context);
-            ComponentName cn = new ComponentName(context, DailyTaskWidgetProvider.class);
-            int[] ids = mgr.getAppWidgetIds(cn);
-            for (int id : ids) {
-                updateWidget(context, mgr, id);
-            }
+        String action = intent.getAction();
+        if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
+            // 开机后重新注册闹钟
             scheduleNextAlarm(context);
+            scheduleMidnightAlarm(context);
+        } else if (ACTION_UPDATE.equals(action) || ACTION_MIDNIGHT.equals(action)) {
+            refreshAllWidgets(context);
+            scheduleNextAlarm(context);
+            scheduleMidnightAlarm(context);
+        } else if (ACTION_CLICK.equals(action)) {
+            // 点击小组件：先刷新，再打开 App
+            refreshAllWidgets(context);
+            Intent launch = new Intent(context, MainActivity.class);
+            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(launch);
+        }
+    }
+
+    /** 刷新所有小组件 */
+    private void refreshAllWidgets(Context context) {
+        AppWidgetManager mgr = AppWidgetManager.getInstance(context);
+        ComponentName cn = new ComponentName(context, DailyTaskWidgetProvider.class);
+        int[] ids = mgr.getAppWidgetIds(cn);
+        for (int id : ids) {
+            updateWidget(context, mgr, id);
         }
     }
 
@@ -94,9 +118,10 @@ public class DailyTaskWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.tv_task, "打开 App 添加任务");
         }
 
-        // 点击小组件打开主界面
-        Intent launch = new Intent(context, MainActivity.class);
-        PendingIntent pi = PendingIntent.getActivity(context, 0, launch,
+        // 点击小组件：发广播（刷新 + 打开 App）
+        Intent click = new Intent(context, DailyTaskWidgetProvider.class);
+        click.setAction(ACTION_CLICK);
+        PendingIntent pi = PendingIntent.getBroadcast(context, 1, click,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.widget_root, pi);
 
@@ -125,7 +150,7 @@ public class DailyTaskWidgetProvider extends AppWidgetProvider {
         return month + "月" + day + "日 " + weeks[w];
     }
 
-    /** 每分钟定时触发一次更新，实现到点自动切换 */
+    /** 每 60 秒定时触发一次更新，实现到点自动切换时段 */
     private void scheduleNextAlarm(Context context) {
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, DailyTaskWidgetProvider.class);
@@ -139,11 +164,44 @@ public class DailyTaskWidgetProvider extends AppWidgetProvider {
         }
     }
 
+    /** 午夜零点设置一个精确闹钟，跨天时自动刷新到新一天 */
+    private void scheduleMidnightAlarm(Context context) {
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(context, DailyTaskWidgetProvider.class);
+        intent.setAction(ACTION_MIDNIGHT);
+        PendingIntent pi = PendingIntent.getBroadcast(context, 2, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        // 计算下一个午夜的 00:00:30
+        Calendar c = Calendar.getInstance();
+        c.add(Calendar.DAY_OF_YEAR, 1);
+        c.set(Calendar.HOUR_OF_DAY, 0);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 30);
+        c.set(Calendar.MILLISECOND, 0);
+        long midnightMillis = c.getTimeInMillis();
+
+        if (am != null) {
+            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, midnightMillis, pi);
+        }
+    }
+
     private void cancelAlarm(Context context) {
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, DailyTaskWidgetProvider.class);
         intent.setAction(ACTION_UPDATE);
         PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        if (am != null) {
+            am.cancel(pi);
+        }
+    }
+
+    private void cancelMidnightAlarm(Context context) {
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(context, DailyTaskWidgetProvider.class);
+        intent.setAction(ACTION_MIDNIGHT);
+        PendingIntent pi = PendingIntent.getBroadcast(context, 2, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         if (am != null) {
             am.cancel(pi);
