@@ -20,15 +20,16 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="今天 · 11月24日 周二"
-            android:textColor="#8A8DA3"
-            android:textSize="12sp" />
+            android:textColor="#5C7A99"
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tv_clock"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="09:35"
-            android:textColor="#1A1C2E"
+            android:textColor="#5C7A99"
             android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -38,23 +39,23 @@
         android:id="@+id/tv_now_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="10dp"
         android:text="现在 · 09:00 - 10:00"
-        android:textColor="#5B6BF5"
-        android:textSize="13sp"
+        android:textColor="#5C7A99"
+        android:textSize="15sp"
         android:textStyle="bold" />
 
-    <!-- 当前任务内容（大字） -->
+    <!-- 当前任务内容（大字醒目） -->
     <TextView
         android:id="@+id/tv_task"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="4dp"
         android:text="准备周会材料"
-        android:textColor="#1A1C2E"
-        android:textSize="22sp"
+        android:textColor="#4A6B8A"
+        android:textSize="28sp"
         android:textStyle="bold"
-        android:maxLines="2"
+        android:maxLines="3"
         android:ellipsize="end" />
 
 </LinearLayout>

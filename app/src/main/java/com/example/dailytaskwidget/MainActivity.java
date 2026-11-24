@@ -94,6 +94,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // 跨天兜底：如果停留在「今天/明天」标签，但日期已经变了，自动重算
+        // 这样即使 App 一直开着跨过零点，也会自动滚到新一天
+        if (showingTomorrow) {
+            currentDateKey = TaskStore.dateKey(1);
+        } else {
+            currentDateKey = TaskStore.todayKey();
+        }
         loadTasks();
     }
 
